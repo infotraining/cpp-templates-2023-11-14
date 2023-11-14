@@ -168,7 +168,7 @@ inline void print_int(int n)
 template <typename InputIter, typename Function>
 void my_for_each(InputIter first, InputIter last, Function f)
 {
-    for(Iter it = first; it != last; ++it)
+    for(InputIter it = first; it != last; ++it)
     {
         f(*it);
     }
