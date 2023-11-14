@@ -3,6 +3,7 @@
 ## Dokumentacja + slajdy
 
 * https://infotraining.github.io/docs-cpp-templates
+* https://infotraining.bitbucket.io/cpp-templates/slides/
 
 ## Konfiguracja środowiska
 
