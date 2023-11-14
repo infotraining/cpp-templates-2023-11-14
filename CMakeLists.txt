@@ -48,3 +48,5 @@ add_subdirectory(traits-and-policies)
 add_subdirectory(type-deduction)
 add_subdirectory(type-traits)
 add_subdirectory(metaprogramming)
+
+add_subdirectory(_exercises/ex-template-functions)
