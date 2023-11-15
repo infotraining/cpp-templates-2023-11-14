@@ -8,7 +8,6 @@ using namespace std::literals;
 
 namespace ClassTemplates
 {
-
     template <typename T1, typename T2>
     struct Pair
     {
