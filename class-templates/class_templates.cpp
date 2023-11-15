@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <numbers>
+#include <map>
 
 #ifdef _MSC_VER
 #define __PRETTY_FUNCTION__ __FUNCSIG__
@@ -226,29 +228,29 @@ typename Container::value_type sum(const Container& container)
 struct S1
 {
     static constexpr int A = 0; // S1::A is an object
-}; 
+};
 
 struct S2
 {
     template <int N>
-    static void A(int) { }  // S2::A is a function template
+    static void A(int) { } // S2::A is a function template
 };
 
 struct S3
 {
     template <int N> // S3::A is a class template
     struct A
-    { 
-        A(int x) {}
+    {
+        A(int x) { }
     };
-}; 
+};
 int x;
 
 template <class T>
 void dependent_template_context(int x)
 {
-    //auto a = T::A<0>(x);                 // if T::A is an object, this is a pair of comparisons;         
-    //auto a = T::template A<0>(x);        // if T::A is a function template, this is a function call;
+    // auto a = T::A<0>(x);                 // if T::A is an object, this is a pair of comparisons;
+    // auto a = T::template A<0>(x);        // if T::A is a function template, this is a function call;
     auto a = typename T::template A<0>(x); // if T::A is a class or alias template, this is a declaration.
 }
 
@@ -260,4 +262,37 @@ TEST_CASE("dependent names")
     CHECK(sum(vec) == 6);
 
     dependent_template_context<S3>(42);
+}
+
+///////////////////////////////////////
+// alias templates
+
+template <typename T>
+using Dictionary = std::map<std::string, T>;
+
+template <size_t N>
+using StringArray = std::array<std::string, N>;
+
+TEST_CASE("alias templates")
+{
+    Dictionary<int> dict = {{"one", 1}, {"two", 2}};
+
+    StringArray<1024> token{};
+}
+
+////////////////////////////////////////
+// template variables
+
+namespace TemplateVariables
+{
+    template <typename T>
+    constexpr T pi(3.141592653589793238);
+}
+
+TEST_CASE("template variables")
+{
+    
+    std::cout << TemplateVariables::pi<double> << "\n";
+    std::cout << std::numbers::pi_v<double> << "\n";
+    std::cout << TemplateVariables::pi<float> << "\n";
 }
