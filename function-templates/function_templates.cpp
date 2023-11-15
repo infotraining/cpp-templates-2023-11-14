@@ -110,7 +110,7 @@ namespace ReturnType
         {
             return a < b ? b : a;
         }
-    }
+    } // namespace Auto
 
     namespace TypeTraits
     {
@@ -119,7 +119,7 @@ namespace ReturnType
         {
             return a < b ? b : a;
         }
-    }
+    } // namespace TypeTraits
 
     namespace DefaultParam
     {
@@ -128,18 +128,42 @@ namespace ReturnType
         {
             return a < b ? b : a;
         }
-    }
+    } // namespace DefaultParam
 } // namespace ReturnType
 
 TEST_CASE("return type")
-{ 
+{
     CHECK(ReturnType::ExplicitParam::max_value<double>(42, 66.5) == 66.5);
-    
+
     CHECK(ReturnType::Auto::max_value(42, 66.5) == 66.5);
 
     CHECK(ReturnType::TypeTraits::max_value(42, 66.5) == 66.5);
     CHECK(ReturnType::TypeTraits::max_value("text"s, "test") == "text"s);
-    
+
     CHECK(ReturnType::DefaultParam::max_value(42, 66.5f) == 66.5f);
     CHECK(ReturnType::DefaultParam::max_value<int, float, double>(42, 66.5f) == 66.5f);
+}
+
+namespace ExplainStd
+{
+    template <typename TContainer>
+    size_t size(const TContainer& container)
+    {
+        return container.size();
+    }
+
+    template <typename T, size_t N>
+    size_t size(T (&tab)[N])
+    {
+        return N;
+    }
+} // namespace ExplainStd
+
+TEST_CASE("function template with NTTP")
+{
+    std::vector<int> vec = {1, 2, 3, 4};
+    CHECK(ExplainStd::size(vec) == 4);
+
+    int tab[10] = {};
+    CHECK(ExplainStd::size(tab) == 10);
 }
