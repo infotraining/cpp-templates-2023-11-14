@@ -103,3 +103,77 @@ TEST_CASE("type traits - remove ref")
 
     auto vec = pusher("test"s, 100);
 }
+
+TEST_CASE("useful type traits")
+{
+    static_assert(std::is_same_v<std::remove_const_t<const int>, int>);
+    static_assert(std::is_same_v<std::decay_t<const int>, int>);
+    static_assert(std::is_same_v<std::decay_t<const int&>, int>);
+    static_assert(std::is_same_v<std::decay_t<int[10]>, int*>);
+    static_assert(std::is_same_v<std::decay_t<int()>, int(*)()>);
+}
+
+/////////////////////////////////////////////////////////////////////
+// type traits - predicates
+
+template <typename T>
+struct IsVoid
+{
+    static constexpr bool value = false;
+};
+
+template <>
+struct IsVoid<void>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+constexpr bool IsVoid_v = IsVoid<T>::value;
+
+//////////////////////////////////////////////////////////////////////
+
+template <typename T>
+struct IsPointer : FalseType
+{
+};
+    
+template <typename T>
+struct IsPointer<T*> : std::true_type
+{
+};
+
+template <typename T>
+constexpr bool IsPointer_v = IsPointer<T>::value;
+
+
+TEST_CASE("type traits - predicates")
+{
+    using T = int;
+    static_assert(IsVoid<T>::value == false);
+
+    using U = void;
+    static_assert(IsVoid_v<U> == true);
+
+    static_assert(IsPointer_v<int> == false);
+    static_assert(IsPointer_v<const int*> == true);
+}
+
+namespace UsingTraits
+{
+    template <typename T>
+    T max_value(T a, T b)
+    {
+        static_assert(!IsPointer_v<T>, "T cannot be a pointer type");
+        return a < b ? b : a;
+    }
+}
+
+TEST_CASE("using traits")
+{   
+    int x = 10;
+    int y = 20;
+
+    CHECK(UsingTraits::max_value(x, y) == 20);
+    UsingTraits::max_value(&x, &y);
+}    
