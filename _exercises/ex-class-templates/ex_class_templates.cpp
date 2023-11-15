@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <array>
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <deque>
 #include <functional>
@@ -19,100 +19,255 @@
 
 // TODO: Stack
 
-// static_assert(std::is_same_v<Stack<int>::container_type, std::deque<int>>);
-// static_assert(std::is_same_v<Stack<int, std::vector<int>>::container_type, std::vector<int>>);
+namespace ver_1
+{
+    template <typename T, typename TContainer = std::deque<T>>
+    class Stack
+    {
+    public:
+        using container_type = TContainer;
 
-// template class Stack<int>;
-// template class Stack<std::string>;
+        size_t size() { return elems.size(); }
 
-// TEST_CASE("After construction", "[stack]")
-// {
-//     Stack<int> s;
+        bool empty() { return elems.empty(); }
 
-//     SECTION("is empty")
-//     {
-//         REQUIRE(s.empty());
-//     }
+        void push(const T& elem) { elems.push_back(elem); }
 
-//     SECTION("size is zero")
-//     {
-//         REQUIRE(s.size() == 0);
-//     }
-// }
+        T& top() { return elems.back(); }
 
-// TEST_CASE("Pushing an item", "[stack,push]")
-// {
-//     Stack<int> s;
+        void pop(T& out)
+        {
+            out = top(); // copy
+            elems.pop_back();
+        }
 
-//     SECTION("is no longer empty")
-//     {
-//         s.push(1);
+    private:
+        TContainer elems;
+    };
 
-//         REQUIRE(!s.empty());
-//     }
+} // namespace ver_1
+/////////////////////////////////////////////
 
-//     SECTION("size is increased")
-//     {
-//         auto size_before = s.size();
+inline namespace ver_2
+{
+    template <typename T, typename U = std::deque<T>>
+    class Stack
+    {
+    public:
+        using container_type = U;
+        using value_type = T;
+        using reference = value_type&;
+        using const_reference = const value_type&;
 
-//         s.push(1);
+        auto empty() const
+        {
+            return data.empty();
+        }
 
-//         REQUIRE(s.size() - size_before == 1);
-//     }
+        auto size() const
+        {
+            return data.size();
+        }
 
-//     SECTION("recently pushed item is on a top")
-//     {
-//         s.push(4);
+        // void push(value_type t_value)
+        //{
+        //     data.emplace_back(t_value);
+        // }
 
-//         REQUIRE(s.top() == 4);
-//     }
-// }
+        // void push(const T& elem) // cc
+        // { 
+        //     data.push_back(elem); 
+        // }
 
-// template <typename TStack>
-// std::vector<typename TStack::value_type> pop_all(TStack& s)
-// {
-//     std::vector<typename TStack::value_type> values(s.size());
+        // void push(T&& elem) // mv
+        // {
+        //     data.push_back(std::move(elem));
+        // }
 
-//     for (auto& item : values)
-//         s.pop(item);
+        template <typename TElem> 
+        void push(TElem&& elem)
+        {
+            data.push_back(std::forward<TElem>(elem));
+        }
 
-//     return values;
-// }
+        const_reference top() const
+        {
+            return data.back();
+        }
 
-// TEST_CASE("Popping an item", "[stack,pop]")
-// {
-//     Stack<int> s;
+        void pop(reference t_value)
+        {
+            t_value = top();
+            data.pop_back();
+        }
 
-//     s.push(1);
-//     s.push(4);
+    private:
+        U data;
+    };
 
-//     int item;
+} // namespace ver_2
 
-//     SECTION(" an item from a top to an argument passed by ref")
-//     {
-//         s.pop(item);
+namespace ver_3
+{
+    template <typename T, template<typename, typename> class Container = std::deque, typename TAllocator = std::allocator<T>>
+    class Stack
+    {
+    public:
+        using container_type = Container<T, TAllocator>;
+        using value_type = T;
+        using reference = value_type&;
+        using const_reference = const value_type&;
 
-//         REQUIRE(item == 4);
-//     }
+        auto empty() const
+        {
+            return data.empty();
+        }
 
-//     SECTION("size is decreased")
-//     {
-//         size_t size_before = s.size();
+        auto size() const
+        {
+            return data.size();
+        }
 
-//         s.pop(item);
+        void push(auto&& elem)
+        {
+            data.push_back(std::forward<decltype(elem)>(elem));
+        }
 
-//         REQUIRE(size_before - s.size() == 1);
-//     }
+        const_reference top() const
+        {
+            return data.back();
+        }
 
-//     SECTION("LIFO order")
-//     {
-//         int a, b;
+        void pop(reference t_value)
+        {
+            t_value = top();
+            data.pop_back();
+        }
 
-//         s.pop(a);
-//         s.pop(b);
+    private:
+        container_type data;
+    };
 
-//         REQUIRE(a == 4);
-//         REQUIRE(b == 1);
-//     }
-// }
+} // namespace ver_2
 
+static_assert(std::is_same_v<Stack<int>::container_type, std::deque<int>>);
+static_assert(std::is_same_v<Stack<int, std::vector<int>>::container_type, std::vector<int>>);
+
+// explicit template instantiation
+template class Stack<int>;
+template class Stack<std::string>;
+
+TEST_CASE("After construction", "[stack]")
+{
+    Stack<int> s;
+
+    SECTION("is empty")
+    {
+        REQUIRE(s.empty());
+    }
+
+    SECTION("size is zero")
+    {
+        REQUIRE(s.size() == 0);
+    }
+}
+
+TEST_CASE("Pushing an item", "[stack,push]")
+{
+    Stack<int> s;
+
+    SECTION("is no longer empty")
+    {
+        s.push(1);
+
+        REQUIRE(!s.empty());
+    }
+
+    SECTION("size is increased")
+    {
+        auto size_before = s.size();
+
+        s.push(1);
+
+        REQUIRE(s.size() - size_before == 1);
+    }
+
+    SECTION("recently pushed item is on a top")
+    {
+        s.push(4);
+
+        REQUIRE(s.top() == 4);
+    }
+}
+
+template <typename TStack>
+std::vector<typename TStack::value_type> pop_all(TStack& s)
+{
+    std::vector<typename TStack::value_type> values(s.size());
+
+    for (auto& item : values)
+        s.pop(item);
+
+    return values;
+}
+
+TEST_CASE("Pop all items")
+{
+    Stack<int> s;
+
+    s.push(1);
+    s.push(4);
+
+    auto values = pop_all<Stack<int>>(s);
+    REQUIRE(values.size() == 2);
+}
+
+
+TEST_CASE("Popping an item", "[stack,pop]")
+{
+    Stack<int> s;
+
+    int x = 1;
+    s.push(x);
+    s.push(4);
+
+    int item;
+
+    SECTION(" an item from a top to an argument passed by ref")
+    {
+        s.pop(item);
+
+        REQUIRE(item == 4);
+    }
+
+    SECTION("size is decreased")
+    {
+        size_t size_before = s.size();
+
+        s.pop(item);
+
+        REQUIRE(size_before - s.size() == 1);
+    }
+
+    SECTION("LIFO order")
+    {
+        int a, b;
+
+        s.pop(a);
+        s.pop(b);
+
+        REQUIRE(a == 4);
+        REQUIRE(b == 1);
+    }
+}
+
+TEST_CASE("Popping all items")
+{
+    ver_3::Stack<int, std::vector> s;
+
+    s.push(1);
+    s.push(4);
+
+    auto values = pop_all(s);
+    REQUIRE(values.size() == 2);
+}
