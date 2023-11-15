@@ -66,6 +66,21 @@ namespace ver_3
     }
 } // namespace ver_2
 
+namespace Cpp20
+{
+    template <typename T>
+    void do_stuff(T obj) requires (sizeof(T) <= 8)
+    {
+        std::cout << "do_stuff(small obj)\n";
+    }
+
+    template <typename T>
+    void do_stuff(const T& obj) requires (sizeof(T) > 8)
+    {
+        std::cout << "do_stuff(large obj)\n";
+    }
+}
+
 ///////////////////////////////////////////
 
 TEST_CASE("SFINAE")
