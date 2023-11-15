@@ -175,5 +175,5 @@ TEST_CASE("using traits")
     int y = 20;
 
     CHECK(UsingTraits::max_value(x, y) == 20);
-    UsingTraits::max_value(&x, &y);
+    //UsingTraits::max_value(&x, &y); // ERROR - static_assert failed
 }    
