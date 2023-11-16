@@ -60,9 +60,8 @@ TEST_CASE("StdContainer")
 }
 
 /*********************
-IndexableContainer concept
-1. is StdContainer
-2. can be indexed: c[index]
+Indexable concept
+1. can be indexed
 **********************/
 
 template <typename C>
@@ -81,6 +80,12 @@ TEST_CASE("Indexable")
     // static_assert(!Indexable<std::list<int>>);
     // static_assert(!Indexable<std::set<int>>);
 }
+
+/*********************
+IndexableStdContainer concept
+1. is StdContainer
+2. is indexable
+**********************/
 
 template <typename C>
 concept IndexableStdContainer = TODO;
