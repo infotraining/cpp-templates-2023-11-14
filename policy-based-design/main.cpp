@@ -8,7 +8,7 @@ int main()
 {
     Vector<int, LoggingErrorRangeChecker, std::mutex> vec = {1, 2, 3};
 
-    Vector<int, ThrowingRangeChecker> vec2 = vec;
+    //Vector<int, ThrowingRangeChecker> vec2 = vec;
 
     vec.set_log_file(std::cout);
 
