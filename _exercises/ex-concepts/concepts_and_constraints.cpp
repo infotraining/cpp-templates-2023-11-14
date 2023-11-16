@@ -22,15 +22,31 @@ Iterator concept
 constexpr static bool TODO = false;
 
 template <typename I>
-concept Iterator = TODO;
+concept Iterator = requires(I iterator) {
+    *iterator;   // simple requirement
+    { ++iterator } -> std::same_as<I&>; // compound requirement
+    iterator++;
+    iterator == iterator;
+    iterator != iterator;
+};
+
+namespace Alt
+{
+   template <typename I>
+    concept Iterator = std::equality_comparable<I> && requires(I iterator) {
+        *iterator;   // simple requirement
+        { ++iterator } -> std::same_as<I&>; // compound requirement
+        iterator++;
+    }; 
+}
 
 TEST_CASE("Iterator")
 {
-    // static_assert(Iterator<int*>);
-    // static_assert(Iterator<const int*>);
-    // static_assert(Iterator<std::vector<int>::iterator>);
-    // static_assert(Iterator<std::vector<int>::const_iterator>);
-    // static_assert(Iterator<std::forward_list<int>::const_iterator>);
+    static_assert(Iterator<int*>);
+    static_assert(Iterator<const int*>);
+    static_assert(Iterator<std::vector<int>::iterator>);
+    static_assert(Iterator<std::vector<int>::const_iterator>);
+    static_assert(Iterator<std::forward_list<int>::const_iterator>);
 }
 
 /*********************
@@ -43,59 +59,92 @@ StdContainer concept
 **********************/
 
 template <typename Container>
-concept StdContainer = TODO;
+concept StdContainer = requires(Container container) {
+    typename Container::iterator;     // type requirement
+    typename Container::const_iterator;
+    typename Container::value_type;
+
+    { std::begin(container) } -> Iterator;
+    { std::end(container) } -> Iterator;
+};
 
 TEST_CASE("StdContainer")
 {
-    // static_assert(StdContainer<std::vector<int>>);
-    // static_assert(StdContainer<std::list<int>>);
-    // static_assert(StdContainer<std::set<int>>);
-    // static_assert(StdContainer<std::map<int, std::string>>);
-    // static_assert(StdContainer<std::unordered_map<int, int>>);
-    // static_assert(StdContainer<std::vector<bool>>);
-    // static_assert(StdContainer<std::string>);
+    static_assert(StdContainer<std::vector<int>>);
+    static_assert(StdContainer<std::list<int>>);
+    static_assert(StdContainer<std::set<int>>);
+    static_assert(StdContainer<std::map<int, std::string>>);
+    static_assert(StdContainer<std::unordered_map<int, int>>);
+    static_assert(StdContainer<std::vector<bool>>);
+    static_assert(StdContainer<std::string>);
 
-    // int arr[32];
-    // static_assert(!StdContainer<decltype(arr)>);
+    int arr[32];
+    static_assert(!StdContainer<decltype(arr)>);
 }
 
 /*********************
-IndexableContainer concept
-1. is StdContainer
-2. can be indexed: c[index]
+Indexable concept
+1. can be indexed
 **********************/
 
+template <typename T>
+struct IndexType
+{
+    using type = size_t;
+};
+
+template <typename T>
+concept HasKeyType = requires { typename T::key_type; };
+
+template <HasKeyType T>
+struct IndexType<T>
+{
+    using type = typename T::key_type;
+};
+
+template <typename T>
+using IndexType_t = typename IndexType<T>::type;
+
 template <typename C>
-concept Indexable = TODO;
+concept Indexable = requires(C container, IndexType_t<C> index) {
+    container[index];
+};
 
 TEST_CASE("Indexable")
 {
-    // static_assert(Indexable<std::vector<int>>);
-    // static_assert(Indexable<std::map<int, std::string>>);
-    // static_assert(Indexable<std::map<std::string, std::string>>);
-    // static_assert(Indexable<std::unordered_map<int, int>>);
-    // static_assert(Indexable<std::vector<bool>>);
-    // static_assert(Indexable<std::string>);
-    // int arr[32];
-    // static_assert(Indexable<decltype(arr)>);
-    // static_assert(!Indexable<std::list<int>>);
-    // static_assert(!Indexable<std::set<int>>);
+    static_assert(Indexable<std::vector<int>>);
+    static_assert(Indexable<std::map<int, std::string>>);
+    static_assert(Indexable<std::map<std::string, std::string>>);
+    static_assert(Indexable<std::unordered_map<int, int>>);
+    static_assert(Indexable<std::vector<bool>>);
+    static_assert(Indexable<std::string>);
+    int arr[32];
+    static_assert(Indexable<decltype(arr)>);
+    static_assert(!Indexable<std::list<int>>);
+    static_assert(!Indexable<std::set<int>>);
 }
 
+
+/*********************
+IndexableStdContainer concept
+1. is StdContainer
+2. is indexable
+**********************/
+
 template <typename C>
-concept IndexableStdContainer = TODO;
+concept IndexableStdContainer = Indexable<C> && StdContainer<C>;
 
 TEST_CASE("IndexableStdContainer")
 {
-    // static_assert(IndexableStdContainer<std::vector<int>>);
-    // static_assert(!IndexableStdContainer<std::list<int>>);
-    // static_assert(!IndexableStdContainer<std::set<int>>);
-    // static_assert(IndexableStdContainer<std::map<int, std::string>>);
-    // static_assert(IndexableStdContainer<std::map<std::string, std::string>>);
-    // static_assert(IndexableStdContainer<std::unordered_map<int, int>>);
-    // static_assert(IndexableStdContainer<std::vector<bool>>);
-    // static_assert(IndexableStdContainer<std::string>);
-    // static_assert(!IndexableStdContainer<int[10]>);
+    static_assert(IndexableStdContainer<std::vector<int>>);
+    static_assert(!IndexableStdContainer<std::list<int>>);
+    static_assert(!IndexableStdContainer<std::set<int>>);
+    static_assert(IndexableStdContainer<std::map<int, std::string>>);
+    static_assert(IndexableStdContainer<std::map<std::string, std::string>>);
+    static_assert(IndexableStdContainer<std::unordered_map<int, int>>);
+    static_assert(IndexableStdContainer<std::vector<bool>>);
+    static_assert(IndexableStdContainer<std::string>);
+    static_assert(!IndexableStdContainer<int[10]>);
 }
 
 void print_all(const StdContainer auto& container)
@@ -122,9 +171,9 @@ void print_all(const IndexableStdContainer auto& container)
 
 TEST_CASE("container concepts")
 {
-    // std::vector vec = {1, 2, 3, 4};
-    // print_all(vec);
+    std::vector vec = {1, 2, 3, 4};
+    print_all(vec);
 
-    // std::list lst{1, 2, 3};
-    // print_all(lst);
+    std::list lst{1, 2, 3};
+    print_all(lst);
 }

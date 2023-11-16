@@ -52,3 +52,4 @@ add_subdirectory(metaprogramming)
 add_subdirectory(_exercises/ex-template-functions)
 add_subdirectory(_exercises/ex-class-templates)
 add_subdirectory(_exercises/ex-concepts)
+
