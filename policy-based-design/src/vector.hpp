@@ -7,12 +7,19 @@
 #include <stdexcept>
 #include <vector>
 
+
 /////////////////////////////////////////////////////////////////
 // RangeCheckPolicy
 //
+
+template <typename T>
+concept RangeChecker = requires(T checker, size_t index, size_t size) {
+    checker.check_range(index, size);
+};
+
 class ThrowingRangeChecker
 {
-protected:
+public:
     ~ThrowingRangeChecker() = default;
 
     void check_range(size_t index, size_t size) const
@@ -21,6 +28,8 @@ protected:
             throw std::out_of_range("Index out of range...");
     }
 };
+
+static_assert(RangeChecker<ThrowingRangeChecker>);
 
 /////////////////////////////////////////////////////////////////
 // RangeCheckPolicy
@@ -33,7 +42,6 @@ public:
         log_ = &log_file;
     }
 
-protected:
     ~LoggingErrorRangeChecker() = default;
 
     void check_range(size_t index, size_t size) const
@@ -50,6 +58,12 @@ private:
 /////////////////////////////////////////////////////////////////
 // LockingPolicy
 //
+template <typename T>
+concept Lockable = requires(T mtx) {
+    mtx.lock();
+    mtx.unlock();
+};
+
 class NullMutex
 {
 public:
@@ -71,8 +85,8 @@ using StdLock = std::mutex;
 ////////////////////////////////////////////////////////////////
 template <
     typename T,
-    typename RangeCheckPolicy,
-    typename LockingPolicy = NullMutex>
+    RangeChecker RangeCheckPolicy,
+    Lockable LockingPolicy = NullMutex>
 class Vector : public RangeCheckPolicy
 {
     std::vector<T> items_;
@@ -100,7 +114,6 @@ public:
         return items_.size();
     }
 
-
     const T& at(size_t index) const
     {
         std::lock_guard<mutex_type> lk{mtx_};
@@ -118,4 +131,4 @@ public:
     }
 };
 
-#endif //CLASS_TEMPLATES_VECTOR_HPP
+#endif // CLASS_TEMPLATES_VECTOR_HPP
