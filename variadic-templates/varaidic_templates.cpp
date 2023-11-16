@@ -1,15 +1,15 @@
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
-#include <tuple>
 
 using namespace std::literals;
 
 template <typename... Types>
 struct Row
-{ 
+{
     std::tuple<Types...> data;
 };
 
@@ -57,4 +57,30 @@ TEST_CASE("variadic templates")
     CHECK(call_wrapper(foo, 2) == 4);
 
     CHECK(call_wrapper(bar, 5, 8) == 40);
+}
+
+//////////////////////////////////////////////////////////
+namespace VT
+{
+    // void print()
+    // {
+    //     std::cout << "\n";
+    // }
+
+    template <typename Head, typename... Tail>
+    void print(Head head, Tail... tail)
+    {
+        std::cout << head << " ";
+
+        if constexpr (sizeof...(tail) > 0)
+            print(tail...); // recursion + pack_expansion
+        else
+            std::cout << "\n";
+    }
+} // namespace VT
+
+TEST_CASE("head-tail idiom")
+{
+    VT::print(1, 3.14, "text"s);
+    VT::print("text"s, "ctext", 66.5, 42);
 }

@@ -7,24 +7,24 @@ message(STATUS "PROJECT_TESTS is: " ${PROJECT_TESTS})
 aux_source_directory(. SRC_LIST)
 file(GLOB HEADERS_LIST "*.h" "*.hpp")
 
-find_package(Catch2 3 REQUIRED)
+# find_package(Catch2 3 REQUIRED)
 
-if (NOT Catch2_FOUND)
-  Include(FetchContent)
+# if (NOT Catch2_FOUND)
+#   Include(FetchContent)
 
-  FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v3.4.0 # or a later release
-  )
+#   FetchContent_Declare(
+#     Catch2
+#     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+#     GIT_TAG        v3.4.0 # or a later release
+#   )
 
-  FetchContent_MakeAvailable(Catch2)
+#   FetchContent_MakeAvailable(Catch2)
 
-  list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-endif()
+#   list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+# endif()
 
-include(CTest)
-include(Catch)
+# include(CTest)
+# include(Catch)
 
 add_executable(${PROJECT_TESTS} ${SRC_LIST} ${HEADERS_LIST})
 
