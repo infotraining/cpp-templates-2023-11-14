@@ -69,13 +69,19 @@ namespace ver_3
 namespace Cpp20
 {
     template <typename T>
-    void do_stuff(T obj) requires (sizeof(T) <= 8)
+    concept BigType = (sizeof(T) > 8); // requires { requires sizeof(T) > 8; };
+
+    static_assert(!BigType<char>);
+    static_assert(BigType<std::vector<int>>);
+
+    template <typename T>
+    void do_stuff(T obj) requires (!BigType<T>)
     {
         std::cout << "do_stuff(small obj)\n";
     }
 
-    template <typename T>
-    void do_stuff(const T& obj) requires (sizeof(T) > 8)
+    template <BigType T>
+    void do_stuff(const T& obj)
     {
         std::cout << "do_stuff(large obj)\n";
     }
@@ -87,9 +93,11 @@ TEST_CASE("SFINAE")
 {
     int x = 10;
     do_stuff(x);
+    Cpp20::do_stuff(x);
 
     std::vector vec = {1, 2, 3};
     ver_3::do_stuff(vec);
+    Cpp20::do_stuff(vec);
 }
 
 ////////////////////////////////////////////
@@ -137,3 +145,4 @@ TEST_CASE("enable_if + class templates")
     Data<double> ds2;
     ds2.info();
 }
+
