@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -77,10 +78,134 @@ namespace VT
         else
             std::cout << "\n";
     }
+
+    //////////////////////////////////////////////////////
+
+    template <typename... Types>
+    struct Count;
+
+    template <typename Head, typename... Tail>
+    struct Count<Head, Tail...>
+    {
+        constexpr static int value = 1 + Count<Tail...>::value; // expansion pack
+    };
+
+    template <>
+    struct Count<>
+    {
+        constexpr static int value = 0;
+    };
+
+    //...
+    static_assert(Count<int, double, std::string&>::value == 3, "must be 3");
+
 } // namespace VT
 
 TEST_CASE("head-tail idiom")
 {
     VT::print(1, 3.14, "text"s);
     VT::print("text"s, "ctext", 66.5, 42);
+}
+
+//////////////////////////////////////////////////////////
+// Fold expressions
+
+namespace VT::Folds
+{
+    template <typename... TArgs>
+    auto sum(TArgs... args)
+    {
+        return (... + args); // return ((((1 + 2) + 3) + 4) + 5)
+    }
+
+    template <typename... Args>
+    void print(const Args&... args)
+    {
+        //(std::cout << ... << args) << "\n";
+
+        (..., (std::cout << args << " ")) << "\n";
+    }
+
+    auto call_foreach(auto&& f, auto&&... param)
+    {
+        (..., f(std::forward<decltype(param)>(param)));
+    }
+} // namespace VT::Folds
+
+TEST_CASE("sum")
+{
+    CHECK(VT::Folds::sum(1, 2, 3, 4, 5) == 15);
+
+    VT::Folds::print(1, 42, 3.14, "text");
+
+    auto printer = [](const auto& value) {
+        std::cout << "value: " << value << "\n";
+    };
+
+    VT::Folds::call_foreach(printer, 1, 2, 3, 4, "text"s);
+}
+
+/////////////////////////////////////////////////////////////
+
+namespace VT::Folds
+{
+    namespace ver_1
+    {
+        template <typename Arg, typename... Args>
+        auto make_vector(Arg arg, Args... args)
+        {
+            std::vector vec = {arg};
+            vec.reserve(sizeof...(args) + 1);
+
+            (..., (vec.push_back(args)));
+
+            return vec;
+        }
+    } // namespace ver_1
+
+    namespace ver_2
+    {
+        template <typename Arg, typename... Args>
+        auto make_vector(Arg arg, Args... args) requires (... && std::is_same_v<Arg, Args>)
+        {
+            std::vector vec = {arg};
+            vec.reserve(sizeof...(args) + 1);
+
+            (..., (vec.push_back(args)));
+
+            return vec;
+        }
+    } // namespace ver_1
+
+    inline namespace ver_3
+    {
+        template <typename... Args>
+        auto make_vector(Args&&... args)
+        {
+            using T = std::common_type_t<Args...>;
+            
+            std::vector<T> vec;
+            vec.reserve(sizeof...(args));
+
+            (..., (vec.push_back(std::forward<Args>(args))));
+
+            return vec;
+        }
+    } // namespace ver_1
+} // namespace VT::Folds
+
+TEST_CASE("make_vector")
+{
+    const std::vector<int> vec1 = {1, 2, 3, 4};
+    const std::vector<int> vec2 = VT::Folds::make_vector(1, 2, 3, 4);
+
+    CHECK(vec1 == vec2);
+
+    // std::vector<std::unique_ptr<int>> vec_ptrs = { std::make_unique<int>(42), std::make_unique<int>(665) };
+
+    const std::vector<std::unique_ptr<int>> vec_ptrs = VT::Folds::make_vector(std::make_unique<int>(42), std::make_unique<int>(665));
+
+    // std::vector<std::unique_ptr<int>> vec_ptrs;
+    // vec_ptrs.push_back(std::make_unique<int>(42));
+    // vec_ptrs.push_back(std::make_unique<int>(665));
 }
